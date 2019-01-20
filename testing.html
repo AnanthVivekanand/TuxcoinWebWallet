@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<head>
+</head>
+<script src="./garlicore-lib.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+const tuxcore = require('garlicore-lib');
+var addresses = [];
+</script>
+<style>
+table, th, td {
+  border: 1px solid black;
+}
+</style>
+</head>
+
+<body>
+<table id="addresses">
+<tr>
+<th>Address</th><th>Private Keys</th><th>Balance</th>
+</tr>
+
+</table>
+<hr>
+Add a new private key: <input id="newprivatekey"></input><button onclick="add_privkey()">Add!</button>
+<span id="addprivkeyerror"></span>
+<br>
+Generate a new private key/address: <button onclick="generate_newpair()">Generate!</button>
+<span id="generateprivkeyerror"></span>
+
+
+
+
+<script>
+function updateAddressesUI(balance) {
+
+    tr = document.createElement('tr');
+    td = document.createElement('td');
+    td2 = document.createElement('td');
+    td3 = document.createElement('td');
+    td.appendChild(document.createTextNode(addresses[addresses.length - 1].address));
+    td2.appendChild(document.createTextNode(addresses[addresses.length - 1].privkey));
+    td3.appendChild(document.createTextNode(balance));
+    tr.appendChild(td);
+    tr.appendChild(td2);
+    tr.appendChild(td3);
+    document.getElementById('addresses').appendChild(tr);
+
+}
+
+function generate_newpair() {
+	try {
+		var privateKey = new tuxcore.PrivateKey();
+		console.log("WIF: " + privateKey.toWIF());
+		var address = privateKey.toAddress().toString(); 
+		console.log("Address: " + address);
+
+		addresses.push({"address": address, "privkey": privateKey.toWIF()});
+		getaddressinfo(address);
+		//updateAddressesUI();
+	} catch (e) {
+		document.getElementById("generateprivkeyerror").innerHTML = e;
+	}
+}
+function add_privkey() {
+
+	var privateKey = new tuxcore.PrivateKey.fromWIF(document.getElementById("newprivatekey").value);
+		var address = privateKey.toAddress().toString(); 
+		addresses.push({"address": address, "privkey": privateKey.toWIF()});
+		getaddressinfo(address);
+		//updateAddressesUI();
+}
+
+
+function loadJSON(path, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                // Here the callback gets implemented
+                object = JSON.parse(xhr.responseText);
+                callback(object);
+            } else {
+
+            }
+        }
+    };
+
+    xhr.open("GET", path, true);
+    xhr.send();
+    return xhr.onreadystatechange();
+}
+
+function getaddressinfo(address) {
+
+loadJSON("https://bypasscors.herokuapp.com/api/?url=http://explore.tuxtoke.life/ext/getaddress/" + address + "?callback=?", (function (result) {
+	console.log(result);
+        updateAddressesUI(result.balance);
+}));
+
+/*
+$.ajax({url: "https://bypasscors.herokuapp.com/api/?url=http://explore.tuxtoke.life/ext/getaddress/" + address + "?callback=?"}).done(
+   function(data) {
+	console.log(data.balance);
+        updateAddressesUI(data.balance);
+   });
+*/
+}
+
+</script>
+</body>
+
+</html>
