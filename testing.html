@@ -15,6 +15,7 @@ table, th, td {
 </head>
 
 <body>
+<b>Imported Addresses:</b>
 <table id="addresses">
 <tr>
 <th>Address</th><th>Private Keys</th><th>Balance</th>
@@ -22,14 +23,19 @@ table, th, td {
 
 </table>
 <hr>
+
 Add a new private key: <input id="newprivatekey"></input><button onclick="add_privkey()">Add!</button>
 <span id="addprivkeyerror"></span>
 <br>
 Generate a new private key/address: <button onclick="generate_newpair()">Generate!</button>
 <span id="generateprivkeyerror"></span>
 
-
-
+<hr>
+<b>TRANSACTIONS</b>
+Address to send from: <input id="transactionFromAddress"></input>
+Address to send to: <input id="transactionToAddress"></input>
+Amount to send: <input id="transactionAmount"></input>
+<button onclick="sendFunds()">Send!</button>
 
 <script>
 function updateAddressesUI(balance) {
@@ -95,6 +101,7 @@ function getaddressinfo(address) {
 
 loadJSON("https://bypasscors.herokuapp.com/api/?url=http://explore.tuxtoke.life/ext/getaddress/" + address + "?callback=?", (function (result) {
 	console.log(result);
+	if (result.balance == undefined) { result.balance = 0; } 
         updateAddressesUI(result.balance);
 }));
 
@@ -105,6 +112,54 @@ $.ajax({url: "https://bypasscors.herokuapp.com/api/?url=http://explore.tuxtoke.l
         updateAddressesUI(data.balance);
    });
 */
+}
+
+function sendFunds() {
+	var destination = document.getElementById("transactionToAddress").value;
+	var account = document.getElementById("transactionFromAddress").value;
+	var amount = document.getElementById("transactionAmount").value;
+
+	var i = 0;
+	while (addresses[i].address != account) {
+		i++;
+		if (addresses[i] == undefined) {
+			return;
+		}
+	}
+	
+var privateKey = new tuxcore.PrivateKey.fromWIF(addresses[i].privkey);
+/*
+var utxo = {
+  "outputIndex" : 0,
+  "address" : "17XBj6iFEsf8kzDMGQk5ghZipxX49VXuaV",
+  "script" : "76a91447862fe165e6121af80d5dde1ecb478ed170565b88ac",
+  "satoshis" : 50000
+};
+*/
+
+loadJSON("https://bypasscors.herokuapp.com/api/?url=http://45.77.228.139:8000/addr/" + account + "/utxo?callback=?", (function (utxos) {
+
+let balance = 0;
+	for (var i = 0; i < utxos.length; i++) {
+	utxos[i].satoshis = utxos[i]['amount'];
+utxos[i]['amount'] = utxos[i]['amount'] / 100000000;
+      balance +=utxos[i]['satoshis'];
+	utxos[i]['vout'] = parseInt(utxos[i]['vout']);  
+    } //add up the balance in satoshi format from all utxos
+
+console.log(utxos);
+console.log(balance);
+    var fee = 1500; //fee for the tx
+    var tx = new tuxcore.Transaction() //use litecore-lib to create a transaction
+      .from(utxos)
+      .to(destination, balance - fee) //note: you are sending all your balance AKA sweeping
+      .fee(fee)
+      .sign(privateKey)
+      .serialize();
+
+console.log(tx);
+}));
+
 }
 
 </script>
