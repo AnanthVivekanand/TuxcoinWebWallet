@@ -49,7 +49,7 @@
     "brfs": "^1.2.0",
     "chai": "^1.10.0",
     "garlicore-build": "garlicoin-project/garlicore-build",
-    "gulp": "^3.9.1",
+    "gulp": "^4.0.2",
     "gulp-util": "^3.0.8",
     "sinon": "^1.13.0"
   },
